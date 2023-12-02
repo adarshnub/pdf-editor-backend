@@ -8,22 +8,24 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const UserModel = require('./models/User');
 const bcrypt  = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 
 const salt = bcrypt.genSaltSync(10);
+const secret = "dfdddgdfgfgowelerererdgdglm";
 
 
 const app = express();
 const PORT = 3001;
 
-app.use(cors());
+app.use(cors({credentials:true, origin: 'http://localhost:5173'}));
 app.use(fileUpload());
 app.use(bodyParser.json());
 
 mongoose.connect('mongodb+srv://devadarsh:myx6Er8HSbySijm7@cluster0.udoup1h.mongodb.net/?retryWrites=true&w=majority');
 
 
-//user create/register
+//user register route
 app.post('/register', async (req,res) => {
     const {username,email, password} = req.body;
     
@@ -41,6 +43,28 @@ app.post('/register', async (req,res) => {
 })
 
 
+//user login route
+app.post('/login', async (req,res) => {
+
+    const {email,password} = req.body;
+    const userDoc = await UserModel.findOne({email});
+    const passwordOk = bcrypt.compareSync(password,userDoc.password)
+    // res.json(passwordOk);
+    if(passwordOk) {
+        //logged in
+        jwt.sign({email,id: userDoc._id},secret,{}, (err,token) => {
+            if(err) throw err;
+            res.cookie('token', token).json('OK');
+        } )
+        // res.json("logged in")
+    }else {
+        res.status(400).json('Wrong Credentials!')
+    }
+})
+
+
+
+//pdf feature routes
 app.post('/upload', (req, res) => {
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
@@ -56,6 +80,8 @@ app.post('/upload', (req, res) => {
   });
 });
 
+
+
 app.get('/pdf/:filename', (req, res) => {
   const filePath = `./uploads/${req.params.filename}`;
 
@@ -66,6 +92,8 @@ app.get('/pdf/:filename', (req, res) => {
     res.send(data);
   });
 });
+
+
 
 app.post('/extract-pages', async (req, res) => {
   const { filename, selectedPages } = req.body;
