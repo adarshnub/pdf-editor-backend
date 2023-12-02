@@ -7,6 +7,10 @@ const { PDFDocument } = require('pdf-lib');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const UserModel = require('./models/User');
+const bcrypt  = require('bcryptjs');
+
+
+const salt = bcrypt.genSaltSync(10);
 
 
 const app = express();
@@ -21,10 +25,14 @@ mongoose.connect('mongodb+srv://devadarsh:myx6Er8HSbySijm7@cluster0.udoup1h.mong
 
 //user create/register
 app.post('/register', async (req,res) => {
-    const {username, password} = req.body;
+    const {username,email, password} = req.body;
     
     try {
-        const userDoc = await UserModel.create({username,password});
+        const userDoc = await UserModel.create({
+            username,
+            email,
+            password : bcrypt.hashSync(password,salt),
+        });
         res.json(userDoc);
     } catch (error) {
         console.error(error);
