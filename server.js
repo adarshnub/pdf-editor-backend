@@ -4,12 +4,34 @@ const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
 const fs = require('fs');
 const { PDFDocument } = require('pdf-lib');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const UserModel = require('./models/User');
+
 
 const app = express();
 const PORT = 3001;
 
+app.use(cors());
 app.use(fileUpload());
 app.use(bodyParser.json());
+
+mongoose.connect('mongodb+srv://devadarsh:myx6Er8HSbySijm7@cluster0.udoup1h.mongodb.net/?retryWrites=true&w=majority');
+
+
+//user create/register
+app.post('/register', async (req,res) => {
+    const {username, password} = req.body;
+    
+    try {
+        const userDoc = await UserModel.create({username,password});
+        res.json(userDoc);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'server error-'})
+    }
+})
+
 
 app.post('/upload', (req, res) => {
   if (!req.files || Object.keys(req.files).length === 0) {
