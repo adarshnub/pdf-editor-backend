@@ -1,73 +1,89 @@
-
-const express = require('express');
-const bodyParser = require('body-parser');
-const fileUpload = require('express-fileupload');
-const fs = require('fs');
-const { PDFDocument } = require('pdf-lib');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const UserModel = require('./models/User');
-const bcrypt  = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
+const express = require("express");
+const bodyParser = require("body-parser");
+const fileUpload = require("express-fileupload");
+const fs = require("fs");
+const { PDFDocument } = require("pdf-lib");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const UserModel = require("./models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
 const salt = bcrypt.genSaltSync(10);
 const secret = "dfdddgdfgfgowelerererdgdglm";
 
-
 const app = express();
 const PORT = 3001;
 
-app.use(cors({credentials:true, origin: 'http://localhost:5173'}));
+app.use(cors({ credentials: true, origin: "http://localhost:5173" }));
 app.use(fileUpload());
 app.use(bodyParser.json());
+app.use(cookieParser());
 
-mongoose.connect('mongodb+srv://devadarsh:myx6Er8HSbySijm7@cluster0.udoup1h.mongodb.net/?retryWrites=true&w=majority');
-
+mongoose.connect(
+  "mongodb+srv://devadarsh:myx6Er8HSbySijm7@cluster0.udoup1h.mongodb.net/?retryWrites=true&w=majority"
+);
 
 //user register route
-app.post('/register', async (req,res) => {
-    const {username,email, password} = req.body;
-    
-    try {
-        const userDoc = await UserModel.create({
-            username,
-            email,
-            password : bcrypt.hashSync(password,salt),
-        });
-        res.json(userDoc);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'server error-'})
-    }
-})
+app.post("/register", async (req, res) => {
+  const { username, email, password } = req.body;
 
+  try {
+    const userDoc = await UserModel.create({
+      username,
+      email,
+      password: bcrypt.hashSync(password, salt),
+    });
+    res.json(userDoc);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "server error-" });
+  }
+});
 
 //user login route
-app.post('/login', async (req,res) => {
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  const userDoc = await UserModel.findOne({ email });
+  const passwordOk = bcrypt.compareSync(password, userDoc.password);
+  // res.json(passwordOk);
+  if (passwordOk) {
+    //logged in
+    jwt.sign({ email, username:userDoc.username, id: userDoc._id }, secret, {}, (err, token) => {
+      if (err) throw err;
+      res.cookie("token", token).json("OK");
+    });
+    // res.json("logged in")
+  } else {
+    res.status(400).json("Wrong Credentials!");
+  }
+});
 
-    const {email,password} = req.body;
-    const userDoc = await UserModel.findOne({email});
-    const passwordOk = bcrypt.compareSync(password,userDoc.password)
-    // res.json(passwordOk);
-    if(passwordOk) {
-        //logged in
-        jwt.sign({email,id: userDoc._id},secret,{}, (err,token) => {
-            if(err) throw err;
-            res.cookie('token', token).json('OK');
-        } )
-        // res.json("logged in")
-    }else {
-        res.status(400).json('Wrong Credentials!')
-    }
-})
+//check-auth_token validation
+app.get("/check-auth", (req, res) => {
+  const { token } = req.cookies;
+  jwt.verify(token, secret, {}, (err, info) => {
+    if (err) throw err;
+    res.json(info);
+  });
+// res.json(req.cookies);
+});
+
+
+// Logout route
+app.post('/logout', (req, res) => {
+    res.clearCookie('token');
+    res.json({ success: true });
+  });
+  
 
 
 
 //pdf feature routes
-app.post('/upload', (req, res) => {
+app.post("/upload", (req, res) => {
   if (!req.files || Object.keys(req.files).length === 0) {
-    return res.status(400).send('No files were uploaded.');
+    return res.status(400).send("No files were uploaded.");
   }
 
   const pdfFile = req.files.pdf;
@@ -76,26 +92,22 @@ app.post('/upload', (req, res) => {
   pdfFile.mv(filePath, (err) => {
     if (err) return res.status(500).send(err);
 
-    res.send('File uploaded!');
+    res.send("File uploaded!");
   });
 });
 
-
-
-app.get('/pdf/:filename', (req, res) => {
+app.get("/pdf/:filename", (req, res) => {
   const filePath = `./uploads/${req.params.filename}`;
 
   fs.readFile(filePath, (err, data) => {
     if (err) return res.status(500).send(err);
 
-    res.contentType('application/pdf');
+    res.contentType("application/pdf");
     res.send(data);
   });
 });
 
-
-
-app.post('/extract-pages', async (req, res) => {
+app.post("/extract-pages", async (req, res) => {
   const { filename, selectedPages } = req.body;
   const filePath = `./uploads/${filename}`;
 
@@ -103,13 +115,13 @@ app.post('/extract-pages', async (req, res) => {
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
   const newPdfDoc = await PDFDocument.create();
-//   selectedPages.forEach((pageIndex) => {
-//     // const [copiedPage] = newPdfDoc.copyPages(pdfDoc, [pageIndex - 1]);
-//     const copiedPages = newPdfDoc.copyPages(pdfDoc, [pageIndex - 1]);
-//     const copiedPage = copiedPages[0];
-//     newPdfDoc.addPage(copiedPage);
-//   });
-for (const pageIndex of selectedPages) {
+  //   selectedPages.forEach((pageIndex) => {
+  //     // const [copiedPage] = newPdfDoc.copyPages(pdfDoc, [pageIndex - 1]);
+  //     const copiedPages = newPdfDoc.copyPages(pdfDoc, [pageIndex - 1]);
+  //     const copiedPage = copiedPages[0];
+  //     newPdfDoc.addPage(copiedPage);
+  //   });
+  for (const pageIndex of selectedPages) {
     // Ensure pageIndex is within bounds
     if (pageIndex > 0 && pageIndex <= pdfDoc.getPageCount()) {
       const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageIndex - 1]);
@@ -118,7 +130,6 @@ for (const pageIndex of selectedPages) {
       console.warn(`Page index ${pageIndex} is out of bounds.`);
     }
   }
-
 
   const newPdfBytes = await newPdfDoc.save();
   const newFilename = `new_${filename}`;
