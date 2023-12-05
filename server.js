@@ -9,7 +9,8 @@ const UserModel = require("./models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const PostModel = require("./models/Post");
+// const PostModel = require("./models/Post");
+const PdfModel = require('./models/Pdf');
 const multer = require("multer");
 
 
@@ -123,49 +124,95 @@ app.post('/logout', (req, res) => {
 
 //pdf Schema
 
-const pdfSchema = new mongoose.Schema({
-  fileName : String,
-  fileData: Buffer,
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-});
+// const pdfSchema = new mongoose.Schema({
+//   fileName : String,
+//   fileData: Buffer,
+//   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+// });
 
-const PdfModel = mongoose.model('Pdf', pdfSchema);
+// const PdfModel = mongoose.model('Pdf', pdfSchema);
 
-//upload
-app.post('/upload', async (req,res) => {
-  try{
-    const {fileName, file} = req.body;
-    // const userId = req.user.id;
+//upload-working upload
+// app.post('/upload', async (req,res) => {
+//   try{
+//     const {fileName, file} = req.body;
+//     // const userId = req.user.id;
 
-    //base64 to binary
-    const fileData = Buffer.from(file, 'base64');
+//     //base64 to binary
+//     const fileData = Buffer.from(file, 'base64');
 
-    //save to db
-    const pdf = new PdfModel({
-      fileName,
-      fileData,
+//     //save to db
+//     const pdf = new PdfModel({
+//       fileName,
+//       fileData,
       
+//     });
+
+//     await pdf.save();
+//     res.status(200).json({message:'file uploaded'});
+//   } catch (error) {
+//     console.error('error handling file upload');
+//     res.status(500).json({error:'sever error 1'});
+//   }
+// })
+
+//new try code  upload
+app.post('/upload', async(req, res) => {
+
+  try {
+    const {fileName,file} = req.body;
+  const fileDataNew = Buffer.from(file, 'base64');
+
+  //user-verify
+  const { token } = req.cookies;
+  
+  jwt.verify(token ,secret, {},async (err,info) => {
+    if(err) throw err;
+    const PostDoc = await PdfModel.create({
+      fileName,
+      fileData : fileDataNew,
+      userId : info.id,
     });
-
-    await pdf.save();
-    res.status(200).json({message:'file uploaded'});
+    res.json(PostDoc);
+  })
   } catch (error) {
-    console.error('error handling file upload');
-    res.status(500).json({error:'sever error 1'});
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-})
+
+  });
+       
+// binary to base64
+//fs.writeFileSync('output.pdf', binaryData);
 
 
-// Retrieve all PDFs
+// Retrieve all PDFs -working code 
+// app.get('/allpdfs', async (req, res) => {
+//   try {
+//     const pdfs = await PdfModel.find();
+//     res.status(200).json(pdfs);
+//   } catch (error) {
+//     console.error('Error retrieving PDFs from the database');
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// });
+
 app.get('/allpdfs', async (req, res) => {
   try {
-    const pdfs = await PdfModel.find();
+    const userId = req.cookies.token ? jwt.verify(req.cookies.token, secret).id : null;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const pdfs = await PdfModel.find({ userId });
     res.status(200).json(pdfs);
   } catch (error) {
-    console.error('Error retrieving PDFs from the database');
+    console.error('Error retrieving PDFs from the database', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 
 
