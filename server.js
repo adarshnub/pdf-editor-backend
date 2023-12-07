@@ -109,8 +109,7 @@ app.post("/upload", async (req, res) => {
     const { fileName, file } = req.body;
      console.log('file 1111',file.slice(0,100));
     const pdfDoc = await PDFDocument.load(file);
-    //console.log('file 2222',pdfDoc)
-    // console.log('fiel2222 data',file);
+   
      const fileDataTobufferObject = Buffer.from(file, "base64");
     // console.log('pdf buffer file :',fileDataTobufferObject)
 
@@ -125,8 +124,7 @@ app.post("/upload", async (req, res) => {
         userId: info.id,
       });
       res.json(PostDoc);
-    // res.json("ok")
-    //   // console.log('post doc data 2',PostDoc)
+   
     });
   } catch (error) {
     console.error(error);
@@ -134,8 +132,7 @@ app.post("/upload", async (req, res) => {
   }
 });
 
-// binary to base64
-//fs.writeFileSync('output.pdf', binaryData);
+
 
 //Retrieve all PDFs 
 app.get('/allpdfs', async (req, res) => {
@@ -175,7 +172,7 @@ app.delete('/pdf/:pdfId', async (req,res) => {
 })
 
 
-//extract slected pages from PDF
+//extract selected pages from PDF
 app.post('/extract-pages', async (req,res) => {
   try{
     const {pdfId, selectedPages} = req.body;
@@ -216,12 +213,11 @@ app.post('/extract-pages', async (req,res) => {
     });
     const savedPdf = await newPdf.save();
 
-    const base64StringOfSavedPdf = savedPdf.toString('base64');
-    // console.log('base 64',base64String.slice(0,100));
+    const base64StringOfSavedPdf = savedPdf.fileData.toString('base64');
+    console.log('base 64',base64StringOfSavedPdf.slice(0,100));
 
     
-    // res.json({downloadLink: `/pdf/${savedPdf._id}`});
-    // res.json(originalPdf.fileData);
+    
     res.json(base64StringOfSavedPdf);
   
   }catch(error) {
@@ -234,79 +230,7 @@ app.post('/extract-pages', async (req,res) => {
 
 
 
-//pdf feature routes
-// app.post("/upload", (req, res) => {
-//   if (!req.files || Object.keys(req.files).length === 0) {
-//     return res.status(400).send("No files were uploaded.");
-//   }
 
-//   const pdfFile = req.files.pdf;
-//   const filePath = `./uploads/${pdfFile.name}`;
-
-//   pdfFile.mv(filePath, (err) => {
-//     if (err) return res.status(500).send(err);
-
-//     res.send("File uploaded!");
-//   });
-// });
-
-// app.post("/upload", uploadMiddleware.single("file"), async (req, res) => {
-//   const { originalname, path } = req.file; //creating extention
-//   const parts = originalname.split(".");
-//   const ext = parts[parts.length - 1];
-//   const newPath = path + "." + ext; //renaming path
-//   fs.renameSync(path, newPath);
-
-//   const { token } = req.cookies;
-//   jwt.verify(token, secret, {}, async (err, info) => {
-//     if (err) throw err;
-//     const { data } = req.body;
-//     const postDoc = await PostModel.create({
-
-//       cover: newPath,
-//       // auther: info.id,
-//     });
-//     res.json('ok');
-
-//   });
-// });
-
-// app.get("/pdf/:filename", (req, res) => {
-//   const filePath = `./uploads/${req.params.filename}`;
-
-//   fs.readFile(filePath, (err, data) => {
-//     if (err) return res.status(500).send(err);
-
-//     res.contentType("application/pdf");
-//     res.send(data);
-//   });
-// });
-
-// app.post("/extract-pages", async (req, res) => {
-//   const { filename, selectedPages } = req.body;
-//   const filePath = `./uploads/${filename}`;
-
-//   const existingPdfBytes = fs.readFileSync(filePath);
-//   const pdfDoc = await PDFDocument.load(existingPdfBytes);
-
-//   const newPdfDoc = await PDFDocument.create();
-
-//   for (const pageIndex of selectedPages) {
-//     // Ensure pageIndex is within bounds
-//     if (pageIndex > 0 && pageIndex <= pdfDoc.getPageCount()) {
-//       const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageIndex - 1]);
-//       newPdfDoc.addPage(copiedPage);
-//     } else {
-//       console.warn(`Page index ${pageIndex} is out of bounds.`);
-//     }
-//   }
-
-//   const newPdfBytes = await newPdfDoc.save();
-//   const newFilename = `new_${filename}`;
-//   fs.writeFileSync(`./uploads/${newFilename}`, newPdfBytes);
-
-//   res.send(newFilename);
-// });
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
