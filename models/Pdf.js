@@ -4,7 +4,7 @@ const UserModel = require('./User');
 
 const PdfSchema = new Schema({
     fileName : String,
-    fileData : String,
+    fileData : Buffer,
     userId:{type:Schema.Types.ObjectId, ref:'User'},
 });
 
