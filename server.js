@@ -23,7 +23,7 @@ const PORT = 3001;
 const storage = multer.memoryStorage(); // Store files in memory
 const upload = multer({ storage: storage });
 
-app.use(cors({ credentials: true, origin: "http://localhost:5173" }));
+app.use(cors({ credentials: true, origin: "https://pdf-editor-qx780bxx9-adarshnub.vercel.app" }));
 app.use(
   fileUpload({
     limits: { fileSize: 50 * 1024 * 1024 },
@@ -108,7 +108,7 @@ app.post("/upload", async (req, res) => {
   try {
     const { fileName, file } = req.body;
      console.log('file 1111',file.slice(0,100));
-    const pdfDoc = await PDFDocument.load(file);
+    // const pdfDoc = await PDFDocument.load(file);
    
      const fileDataTobufferObject = Buffer.from(file, "base64");
     // console.log('pdf buffer file :',fileDataTobufferObject)
@@ -226,7 +226,21 @@ app.post('/extract-pages', async (req,res) => {
   }
 })
 
+//get pdf by id
+app.get('/pdf/:pdfId', async (req, res) => {
+  try {
+    const {pdfId} = req.params;
+    const pdf = await PdfModel.findById(pdfId);
 
+    if(!pdf) {
+      return res.status(404).json({error: 'PDF not found'});
+    }
+    const base64String = pdf.fileData.toString('base64');
+    res.send(base64String);
+  } catch (error) {
+    console.error('error fetching pdf ',error);
+  }
+})
 
 
 
