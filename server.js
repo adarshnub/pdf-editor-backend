@@ -23,7 +23,7 @@ const PORT = 3001;
 const storage = multer.memoryStorage(); // Store files in memory
 const upload = multer({ storage: storage });
 
-const allowedOrigins = ['http://localhost:5173','https://pdf-editor-qx780bxx9-adarshnub.vercel.app'];
+const allowedOrigins = ['http://localhost:5173','https://pdf-editor-enia024ct-adarshnub.vercel.app/'];
 
 app.use(cors({ credentials: true, origin: allowedOrigins }));
 app.use(
