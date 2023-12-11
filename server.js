@@ -19,11 +19,11 @@ const secret = "dfdddgdfgfgowelerererdgdglm";
 const app = express();
 const PORT = 3001;
 
-//to be deleted 2 lines
+
 const storage = multer.memoryStorage(); // Store files in memory
 const upload = multer({ storage: storage });
 
-const allowedOrigins = ['http://localhost:5173','https://pdf-editor-edbu26agr-adarshnub.vercel.app'];
+const allowedOrigins = ['http://localhost:5173','https://pdf-editor-adarshnub.vercel.app'];
 
 app.use(cors({ credentials: true, origin: allowedOrigins }));
 app.use(
@@ -49,9 +49,9 @@ mongoose.connect(
 
 //user register route
 app.post("/register", async (req, res) => {
-  const { username, email, password } = req.body;
-
+  
   try {
+    const { username, email, password } = req.body;
     const userDoc = await UserModel.create({
       username,
       email,
